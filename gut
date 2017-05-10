@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+import os
+import click
+
+def run(cmd, silent=False):
+	if silent:
+		cmd += " &>/dev/null"
+	print('\x1b[1m> \x1b[34m' + cmd + '\x1b[0m')
+	subprocess.check_call(cmd, shell=True)
+
+@click.command()
+@click.version_option(version="0.1.0")
+@click.argument('command')
+def main(command):
+	os.environ['LANG'] = 'C.UTF-8'
+
+	try:
+		if command == "pull":
+			needs_stash = False
+			if subprocess.check_output('git diff --shortstat 2> /dev/null | tail -n1', shell=True) != b'':
+				needs_stash = True
+			if needs_stash:
+				run('git stash -k', silent=True)
+			try:
+				run('git pull ' + ' '.join(sys.argv[2:]))
+			finally:
+				if needs_stash:
+					try:
+						run('git stash pop', silent=True)
+					except subprocess.CalledProcessError:
+						run('git stash drop', silent=True)
+		else:
+			click.secho('gut: Unknown command ' + click.style(command, fg='red', bold=True))
+	except subprocess.CalledProcessError as err:
+		click.secho(str(err), fg='red', bold=True)
+
+if __name__ == '__main__':
+    main()
