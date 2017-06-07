@@ -52,7 +52,7 @@ def main(command):
 			has_staged_changes = git_has_staged_changes()
 			if has_staged_changes:
 				run('git commit -m GUT_TMP')
-			run('git stash')
+			run('git stash --include-untracked')
 			if has_staged_changes:
 				run('git reset --soft HEAD~')
 		else:
