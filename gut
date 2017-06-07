@@ -4,15 +4,23 @@ import subprocess
 import os
 import click
 
-def run(cmd, silent=False):
+def run(cmd, silent=False, may_fail=False):
 	if silent:
 		cmd += " &>/dev/null"
 	print('\x1b[1m> \x1b[34m' + cmd + '\x1b[0m')
-	subprocess.check_call(cmd, shell=True)
+	try:
+		subprocess.check_call(cmd, shell=True)
+	except subprocess.CalledProcessError as err:
+		if not may_fail:
+			raise err
 
 def git_is_dirty():
 	return subprocess.check_output(
 		'git diff --shortstat 2> /dev/null | tail -n1', shell=True) != b''
+
+def git_has_staged_changes():
+	return subprocess.check_output('git diff --name-only --cached 2> /dev/null', shell=True) != b''
+
 
 @click.command()
 @click.version_option(version="0.1.0")
@@ -36,9 +44,16 @@ def main(command):
 			needs_commit = git_is_dirty()
 			if needs_commit:
 				run('git commit -am GUT_TMP')
-			run('git stash apply')
+			run('git stash apply --quiet', may_fail=True)
 			run('git stash drop')
 			if needs_commit:
+				run('git reset --soft HEAD~')
+		elif command == ('stash',):
+			has_staged_changes = git_has_staged_changes()
+			if has_staged_changes:
+				run('git commit -m GUT_TMP')
+			run('git stash')
+			if has_staged_changes:
 				run('git reset --soft HEAD~')
 		else:
 			click.secho('gut: Unknown command ' + click.style(' '.join(command), fg='red',
