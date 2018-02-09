@@ -21,9 +21,10 @@ def git_is_dirty():
 def git_has_staged_changes():
 	return subprocess.check_output('git diff --name-only --cached 2> /dev/null', shell=True) != b''
 
+VERSION = '0.1.0'
 
 @click.command()
-@click.version_option(version="0.1.0")
+@click.version_option(version=VERSION)
 @click.argument('command', nargs=-1, required=True)
 def main(command):
 	os.environ['LANG'] = 'C.UTF-8'
@@ -60,6 +61,3 @@ def main(command):
 			                                                  bold=True))
 	except subprocess.CalledProcessError as err:
 		click.secho(str(err), fg='red', bold=True)
-
-if __name__ == '__main__':
-    main()
