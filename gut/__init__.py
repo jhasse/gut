@@ -56,6 +56,20 @@ def main(command):
 			run('git stash --include-untracked')
 			if has_staged_changes:
 				run('git reset --soft HEAD~')
+		elif command[0] == 'revert':
+			run('git reset -- ' + command[1])
+		elif command[0] == 'switch':
+			needs_stash = git_is_dirty()
+			if needs_stash:
+				run('git stash -k', silent=True)
+			try:
+				run('git checkout ' + command[1])
+			finally:
+				if needs_stash:
+					try:
+						run('git stash pop', silent=True)
+					except subprocess.CalledProcessError:
+						run('git stash drop', silent=True)
 		else:
 			click.secho('gut: Unknown command ' + click.style(' '.join(command), fg='red',
 			                                                  bold=True))
