@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import subprocess
-import os
-import click
+
+VERSION = '0.1.1'
 
 def run(cmd, silent=False, may_fail=False):
 	if silent:
@@ -20,58 +20,3 @@ def git_is_dirty():
 
 def git_has_staged_changes():
 	return subprocess.check_output('git diff --name-only --cached 2> /dev/null', shell=True) != b''
-
-VERSION = '0.1.0'
-
-@click.command()
-@click.version_option(version=VERSION)
-@click.argument('command', nargs=-1, required=True)
-def main(command):
-	os.environ['LANG'] = 'C.UTF-8'
-	try:
-		if command == ("pull",):
-			needs_stash = git_is_dirty()
-			if needs_stash:
-				run('git stash -k', silent=True)
-			try:
-				run('git pull ' + ' '.join(command[1:]))
-			finally:
-				if needs_stash:
-					try:
-						run('git stash pop', silent=True)
-					except subprocess.CalledProcessError:
-						run('git stash drop', silent=True)
-		elif command == ('stash', 'pop'):
-			needs_commit = git_is_dirty()
-			if needs_commit:
-				run('git commit -am GUT_TMP')
-			run('git stash apply --quiet', may_fail=True)
-			run('git stash drop')
-			if needs_commit:
-				run('git reset --soft HEAD~')
-		elif command == ('stash',):
-			has_staged_changes = git_has_staged_changes()
-			if has_staged_changes:
-				run('git commit -m GUT_TMP')
-			run('git stash --include-untracked')
-			if has_staged_changes:
-				run('git reset --soft HEAD~')
-		elif command[0] == 'revert':
-			run('git reset -- ' + command[1])
-		elif command[0] == 'switch':
-			needs_stash = git_is_dirty()
-			if needs_stash:
-				run('git stash -k', silent=True)
-			try:
-				run('git checkout ' + command[1])
-			finally:
-				if needs_stash:
-					try:
-						run('git stash pop', silent=True)
-					except subprocess.CalledProcessError:
-						run('git stash drop', silent=True)
-		else:
-			click.secho('gut: Unknown command ' + click.style(' '.join(command), fg='red',
-			                                                  bold=True))
-	except subprocess.CalledProcessError as err:
-		click.secho(str(err), fg='red', bold=True)

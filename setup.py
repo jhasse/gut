@@ -12,7 +12,7 @@ setup(
     description="User-friendly CLI frontend for Git",
     packages=['gut'],
     entry_points={
-        'console_scripts': ['gut = gut:main'],
+        'console_scripts': ['gut = gut.__main__:main'],
     },
     install_requires=[
         'click',
