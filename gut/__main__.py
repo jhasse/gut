@@ -20,7 +20,7 @@ def main(command):
 					try:
 						run('git stash pop', silent=True)
 					except subprocess.CalledProcessError:
-						run('git stash drop', silent=True)
+						run('git stash drop')
 		elif command == ('stash', 'pop'):
 			needs_commit = git_is_dirty()
 			if needs_commit:
