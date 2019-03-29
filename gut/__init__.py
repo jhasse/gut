@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import random
+import string
 import subprocess
 
 VERSION = '0.1.1'
@@ -20,3 +22,6 @@ def git_is_dirty():
 
 def git_has_staged_changes():
 	return subprocess.check_output('git diff --name-only --cached 2> /dev/null', shell=True) != b''
+
+def random_name():
+	return ''.join(random.choices(string.ascii_uppercase + string.digits, k=9))

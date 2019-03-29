@@ -1,7 +1,7 @@
 import click
 import os
 import subprocess
-from gut import run, git_is_dirty, git_has_staged_changes, VERSION
+from gut import run, git_is_dirty, git_has_staged_changes, random_name, VERSION
 
 @click.command()
 @click.version_option(version=VERSION)
@@ -10,15 +10,26 @@ def main(command):
 	os.environ['LANG'] = 'C.UTF-8'
 	try:
 		if command == ("pull",):
+			has_staged_changes = git_has_staged_changes()
+			if has_staged_changes:
+				run('git stash --keep-index')
+				stash_name = random_name()
+				run('git stash save "{}"'.format(stash_name))
+				run('git stash apply stash@{1}')
+				run('git stash show -p | git apply -R')
+				run('git stash drop stash@{1}')
 			needs_stash = git_is_dirty()
 			if needs_stash:
-				run('git stash -k', silent=True)
+				run('git stash', silent=True)
 			try:
 				run('git pull ' + ' '.join(command[1:]))
 			finally:
 				if needs_stash:
 					try:
 						run('git stash pop', silent=True)
+						if has_staged_changes:
+							run('git reset .')
+							run('git stash pop', silent=True)
 					except subprocess.CalledProcessError:
 						run('git stash drop')
 		elif command == ('stash', 'pop'):
